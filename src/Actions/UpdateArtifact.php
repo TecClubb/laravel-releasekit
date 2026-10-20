@@ -2,8 +2,8 @@
 
 namespace TecClub\ReleaseKit\Actions;
 
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Models\Artifact;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 
 /**
  * Updates an artifact's descriptive fields. The file, its format and its

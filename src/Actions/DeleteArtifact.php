@@ -3,9 +3,9 @@
 namespace TecClub\ReleaseKit\Actions;
 
 use TecClub\ReleaseKit\Actions\Concerns\RunsInTransaction;
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Jobs\DeleteArtifactFile;
 use TecClub\ReleaseKit\Models\Artifact;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 
 /**
  * Deletes an artifact. Its file is removed by a queued job after the

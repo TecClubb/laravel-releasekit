@@ -32,6 +32,15 @@ arch('actions expose a handle method')
     ->toHaveMethod('handle')
     ->ignoring('TecClub\ReleaseKit\Actions\Concerns');
 
+arch('data objects are immutable')
+    ->expect('TecClub\ReleaseKit\Data')
+    ->toBeFinal()
+    ->toBeReadonly();
+
+arch('services never write through models directly')
+    ->expect('TecClub\ReleaseKit\Services')
+    ->not->toUse(['TecClub\ReleaseKit\Actions']);
+
 arch('events are dispatched after commit')
     ->expect('TecClub\ReleaseKit\Events')
     ->toImplement(ShouldDispatchAfterCommit::class);
