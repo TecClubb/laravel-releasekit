@@ -34,6 +34,13 @@ class Track extends Model
         'minimum_supported_version',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'current_release_id' => 'integer',
+        ];
+    }
+
     public function getTable(): string
     {
         return ModelResolver::table('tracks');

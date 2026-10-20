@@ -69,6 +69,7 @@ class Artifact extends Model
     protected function casts(): array
     {
         return [
+            'app_release_id' => 'integer',
             'size_bytes' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',

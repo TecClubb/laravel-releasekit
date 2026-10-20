@@ -7,8 +7,8 @@ Update this file in the same PR as the work it describes.
 
 | # | Phase | Branch | Status |
 |---|---|---|---|
-| 1 | Skeleton & foundation | `phase/1-skeleton` | 🟡 In review |
-| 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | ⚪ Not started |
+| 1 | Skeleton & foundation | `phase/1-skeleton` | ✅ Done ([#1](https://github.com/TecClubb/laravel-releasekit/pull/1)) |
+| 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | 🟡 In review |
 | 3 | Services & facade | `phase/3-services` | ⚪ Not started |
 | 4 | HTTP API & routes | `phase/4-http` | ⚪ Not started |
 | 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ⚪ Not started |
@@ -41,18 +41,19 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** all domain-rule tests in §6 pass.
 
-- [ ] `ReleaseKitException` hierarchy
-- [ ] Actions: `CreateRelease`, `UpdateRelease`, `PublishRelease`, `PromoteRelease` (+ `warnings()`), `YankRelease`, `UnyankRelease`, `DeleteDraftRelease`, `UpdateTrackMinimum`, `AttachArtifact` (record only; file handling in phase 5), `UpdateArtifact`, `DeleteArtifact`, `AddLink`, `UpdateLink`, `DeleteLink`
-- [ ] Track rules in a transaction with row lock (§6.2)
-- [ ] Events: `ReleaseCreated`, `ReleasePublished`, `ReleasePromoted`, `ReleaseYanked`, `TrackMinimumUpdated`, `ArtifactAttached` (`ArtifactDownloaded` lands in phase 4)
-- [ ] `CacheInvalidationObserver` on all four core models
-- [ ] Tests for every rule in §6 and §12
+- [x] `ReleaseKitException` hierarchy: `InvalidVersion`, `UnsupportedValue`, `DuplicateRelease`, `InvalidStatusTransition`, `ReleaseLocked`, `InvalidPromotion`, `ReleaseIsCurrent`, `InvalidLink`, `InvalidArtifactFile`
+- [x] Actions: `CreateRelease`, `UpdateRelease`, `PublishRelease`, `PromoteRelease` (+ `warnings()`), `YankRelease`, `UnyankRelease`, `DeleteDraftRelease`, `UpdateTrackMinimum`, `AttachArtifact`, `UpdateArtifact`, `DeleteArtifact`, `AddLink`, `UpdateLink`, `DeleteLink`
+- [x] Track rules in a transaction with row lock (§6.2)
+- [x] Events (all dispatched after commit): `ReleaseCreated`, `ReleasePublished`, `ReleasePromoted`, `ReleaseYanked`, `ReleaseUnyanked`, `TrackMinimumUpdated`, `ArtifactAttached` (`ArtifactDownloaded` lands in phase 4)
+- [x] `CacheInvalidationObserver` on all four core models + `Services\ReleaseCache` (keys, remember, forget)
+- [x] Pulled forward from phase 5: `AttachArtifact` file handling (streamed upload or move of an existing path, size limit, rollback on DB failure) and the `DeleteArtifactFile` job
+- [x] Tests for every rule in §6 and §12 (189 tests total)
 
 ## Phase 3 — Services & facade
 
 **Done when:** service tests pass without HTTP.
 
-- [ ] `ReleaseCache` (per platform+channel payload, observer-driven invalidation, §10)
+- [ ] Build the cached per platform+channel payload on `ReleaseCache` (§10; the cache class and invalidation shipped in phase 2)
 - [ ] `VersionChecker` (§7.3 algorithm)
 - [ ] `DownloadResolver` (architecture selection, downloadable formats, link merging, §7.4)
 - [ ] `DownloadUrlGenerator`, `ArtifactDelivery` (stream / signed / public + fallbacks, §9)
@@ -73,8 +74,10 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** a 1 GB+ file attaches without memory issues, and deletes clean up files.
 
-- [ ] `AttachArtifact` file handling: `UploadedFile` (streamed) or existing disk path (moved), size limit
-- [ ] `ComputeArtifactChecksum` job, `DeleteArtifactFile` job (after commit)
+- [x] `AttachArtifact` file handling: `UploadedFile` (streamed) or existing disk path (moved), size limit — done in phase 2
+- [x] `DeleteArtifactFile` job (after commit) — done in phase 2
+- [ ] `ComputeArtifactChecksum` job (fills `size_bytes`, `mime_type`, `checksum_sha256`), dispatched from `AttachArtifact`
+- [ ] Verify a 1 GB+ file attaches without memory growth (both inputs)
 - [ ] `releasekit:prune-orphans --dry-run` command
 
 ## Phase 6 — Analytics
@@ -110,4 +113,16 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-20 | 2 | Status-changing Actions `refresh()` the release first, so a stale model can't e.g. publish a yanked release. |
+| 2026-10-20 | 2 | Duplicate check compares versions (not strings): `1.2` and `1.2.0` can't both exist on one platform + channel. |
+| 2026-10-20 | 2 | `UpdateRelease` takes an attribute array and ignores unchanged locked fields, so host forms can submit everything. Drafts: all fields; published: `release_notes`, `metadata`; yanked: `release_notes`. Platform can't change while a draft has artifacts/links; channel can't change while it has artifacts (files live on the channel's disk). |
+| 2026-10-20 | 2 | Yanked releases lock their artifacts and links (add/update/delete) — "notes only" per §6.1. |
+| 2026-10-20 | 2 | `PromoteRelease` rejects a release below the track minimum (applies to rollbacks too: lower the minimum first). `handle()` returns the `Track`; an optional `$track` argument is validated against the release. |
+| 2026-10-20 | 2 | `YankRelease` ignores `rollbackTo` when the release isn't current; a rollback target equal to the release is rejected. |
+| 2026-10-20 | 2 | `PromoteRelease::warnings()` returns `list<string>`: missing format/architecture vs current (a universal build covers all architectures), rollback, below minimum, not published, nothing to download, already current. |
+| 2026-10-20 | 2 | Added a `ReleaseUnyanked` event (not in the plan's list) for audit logs. |
+| 2026-10-20 | 2 | Link URLs: any valid URL incl. app-store schemes (`market://`, `itms-apps://`); `javascript:`, `data:`, `vbscript:`, `file:` are rejected. Link type is derived: store set → `store`, else `external`. |
+| 2026-10-20 | 2 | Artifact storage keys use a slugged filename (`{ulid}-my-app-setup.exe`); the original name is kept in `original_filename` for `Content-Disposition`. |
+| 2026-10-20 | 2 | Link writes clear the cache for every channel of the platform (permanent links apply to all channels). |
+| 2026-10-20 | 2 | `.gitattributes` forces LF so Windows checkouts and Pint agree. |
 | 2026-10-20 | 1 | Migration files carry timestamp prefixes so they run in FK order (releases before tracks/artifacts/links). They are auto-loaded; hosts can opt out with `ReleaseKit::ignoreMigrations()` and publish them via `releasekit-migrations` instead. |

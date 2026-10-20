@@ -171,6 +171,14 @@ class Release extends Model
         return app(ChannelRegistry::class)->label($this->channel);
     }
 
+    /**
+     * Human-readable name for messages, e.g. "Android 1.2.0 (stable)".
+     */
+    public function displayName(): string
+    {
+        return "{$this->platformLabel()} {$this->version} ({$this->channelLabel()})";
+    }
+
     protected static function newFactory(): ReleaseFactory
     {
         return ReleaseFactory::new();
