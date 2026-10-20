@@ -5,8 +5,11 @@ namespace TecClub\ReleaseKit;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use TecClub\ReleaseKit\Observers\CacheInvalidationObserver;
+use TecClub\ReleaseKit\Services\ReleaseCache;
 use TecClub\ReleaseKit\Support\ChannelRegistry;
 use TecClub\ReleaseKit\Support\DiskResolver;
+use TecClub\ReleaseKit\Support\ModelResolver;
 use TecClub\ReleaseKit\Support\PlatformRegistry;
 
 class ReleaseKitServiceProvider extends PackageServiceProvider
@@ -30,6 +33,7 @@ class ReleaseKitServiceProvider extends PackageServiceProvider
         $this->app->singleton(PlatformRegistry::class);
         $this->app->singleton(ChannelRegistry::class);
         $this->app->singleton(DiskResolver::class);
+        $this->app->singleton(ReleaseCache::class);
         $this->app->singleton(ReleaseKit::class);
     }
 
@@ -41,6 +45,11 @@ class ReleaseKitServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        // Observe the configured classes: host subclasses fire events under their own names.
+        foreach ([ModelResolver::release(), ModelResolver::track(), ModelResolver::artifact(), ModelResolver::link()] as $model) {
+            $model::observe(CacheInvalidationObserver::class);
+        }
+
         if ($this->app->runningInConsole()) {
             // The stats table is optional: it is published on request and never loaded at runtime.
             $this->publishes([

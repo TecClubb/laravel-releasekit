@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use TecClub\ReleaseKit\Exceptions\ReleaseKitException;
 use TecClub\ReleaseKit\Support\VersionComparator;
@@ -24,3 +25,13 @@ arch('exceptions extend the package base exception')
 arch('models extend Eloquent')
     ->expect('TecClub\ReleaseKit\Models')
     ->toExtend(Model::class);
+
+arch('actions expose a handle method')
+    ->expect('TecClub\ReleaseKit\Actions')
+    ->classes()
+    ->toHaveMethod('handle')
+    ->ignoring('TecClub\ReleaseKit\Actions\Concerns');
+
+arch('events are dispatched after commit')
+    ->expect('TecClub\ReleaseKit\Events')
+    ->toImplement(ShouldDispatchAfterCommit::class);

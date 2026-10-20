@@ -53,6 +53,7 @@ class Link extends Model
     protected function casts(): array
     {
         return [
+            'app_release_id' => 'integer',
             'type' => LinkType::class,
             'is_active' => 'boolean',
             'sort_order' => 'integer',
