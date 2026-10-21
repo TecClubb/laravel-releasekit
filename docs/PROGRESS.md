@@ -10,8 +10,8 @@ Update this file in the same PR as the work it describes.
 | 1 | Skeleton & foundation | `phase/1-skeleton` | ✅ Done ([#1](https://github.com/TecClubb/laravel-releasekit/pull/1)) |
 | 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | ✅ Done ([#2](https://github.com/TecClubb/laravel-releasekit/pull/2)) |
 | 3 | Services & facade | `phase/3-services` | ✅ Done ([#3](https://github.com/TecClubb/laravel-releasekit/pull/3)) |
-| 4 | HTTP API & routes | `phase/4-http` | 🟡 In review |
-| 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ⚪ Not started |
+| 4 | HTTP API & routes | `phase/4-http` | ✅ Done ([#4](https://github.com/TecClubb/laravel-releasekit/pull/4)) |
+| 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | 🟡 In review |
 | 6 | Analytics (optional stats) | `phase/6-analytics` | ⚪ Not started |
 | 7 | Docs & Laravel Boost | `phase/7-docs-boost` | ⚪ Not started |
 
@@ -78,9 +78,9 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 - [x] `AttachArtifact` file handling: `UploadedFile` (streamed) or existing disk path (moved), size limit — done in phase 2
 - [x] `DeleteArtifactFile` job (after commit) — done in phase 2
-- [ ] `ComputeArtifactChecksum` job (fills `size_bytes`, `mime_type`, `checksum_sha256`), dispatched from `AttachArtifact`
-- [ ] Verify a 1 GB+ file attaches without memory growth (both inputs)
-- [ ] `releasekit:prune-orphans --dry-run` command
+- [x] `ComputeArtifactChecksum` job (fills missing `checksum_sha256`, `size_bytes`, `mime_type`; 1 MB chunks; 3 tries), dispatched after commit from `AttachArtifact`
+- [x] Verify a 1 GB+ file attaches without memory growth (both inputs): 1.1 GB, peak < 32 MB, incl. checksum — `large-files` test group, own CI job
+- [x] `releasekit:prune-orphans` (`--dry-run`, `--disk=*`, `--older-than=60`, `--force`)
 
 ## Phase 6 — Analytics
 
@@ -115,6 +115,9 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-21 | 5 | The checksum job takes the artifact id (not the model), so a deleted artifact is a silent no-op; a missing file logs a warning instead of failing the job. It saves normally so the cache observer refreshes the served checksum. |
+| 2026-10-21 | 5 | `prune-orphans` skips files modified in the last 60 minutes (`--older-than`), because `AttachArtifact` moves the file into place before its row commits. Without `--dry-run` it asks for confirmation unless `--force`. It scans the default disk, every channel disk and every disk referenced by artifact rows, only under `storage.directory`. |
+| 2026-10-21 | 5 | The 1 GB+ tests are in the `large-files` group: excluded from `composer test` and the CI matrix, run by `composer test-large` and a dedicated CI job. |
 | 2026-10-21 | 4 | Auto-registration is done by `Http\RouteRegistrar` (needed for the per-endpoint toggles); `routes/releasekit.php` is the publishable stub with plain `Route::` definitions under `config('releasekit.routes.name')`, so signed download URLs keep resolving. |
 | 2026-10-21 | 4 | Validation and channel-access errors are always JSON (422 / 403), even without `Accept: application/json` — app clients and download managers rarely send it. |
 | 2026-10-21 | 4 | `architecture` is validated against the platform's architectures in `check` and `downloads` (422 for e.g. `x64` on Android). |

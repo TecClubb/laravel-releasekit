@@ -5,6 +5,7 @@ namespace TecClub\ReleaseKit;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use TecClub\ReleaseKit\Console\PruneOrphansCommand;
 use TecClub\ReleaseKit\Http\RouteRegistrar;
 use TecClub\ReleaseKit\Observers\CacheInvalidationObserver;
 use TecClub\ReleaseKit\Services\ReleaseCache;
@@ -20,6 +21,7 @@ class ReleaseKitServiceProvider extends PackageServiceProvider
         $package
             ->name('releasekit')
             ->hasConfigFile()
+            ->hasCommand(PruneOrphansCommand::class)
             ->hasMigrations([
                 '2026_10_20_000001_create_app_releases_table',
                 '2026_10_20_000002_create_app_release_tracks_table',
