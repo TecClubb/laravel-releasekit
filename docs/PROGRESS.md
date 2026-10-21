@@ -12,8 +12,8 @@ Update this file in the same PR as the work it describes.
 | 3 | Services & facade | `phase/3-services` | ✅ Done ([#3](https://github.com/TecClubb/laravel-releasekit/pull/3)) |
 | 4 | HTTP API & routes | `phase/4-http` | ✅ Done ([#4](https://github.com/TecClubb/laravel-releasekit/pull/4)) |
 | 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ✅ Done ([#5](https://github.com/TecClubb/laravel-releasekit/pull/5)) |
-| 6 | Analytics (optional stats) | `phase/6-analytics` | 🟡 In review |
-| 7 | Docs & Laravel Boost | `phase/7-docs-boost` | ⚪ Not started |
+| 6 | Analytics (optional stats) | `phase/6-analytics` | ✅ Done ([#6](https://github.com/TecClubb/laravel-releasekit/pull/6)) |
+| 7 | Docs & Laravel Boost | `phase/7-docs-boost` | 🟡 In review |
 
 Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
@@ -95,11 +95,12 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** a new project can integrate from the README alone; an agent via Boost can build an admin screen and register routes without reading the source.
 
-- [ ] README
-- [ ] `resources/boost/guidelines/core.blade.php`
-- [ ] `resources/boost/skills/releasekit/SKILL.md` + references (`actions`, `config`, `api`, `client-integration`)
-- [ ] `docs/client-integration.md`
-- [ ] Drift test: every class named in Boost docs exists
+- [x] README (install, concepts, config, Actions, API, facade, protected channels, storage/delivery, analytics, Boost, testing)
+- [x] `resources/boost/guidelines/core.blade.php` (Boost conventions verified against laravel/boost source, 2026-10-17)
+- [x] `resources/boost/skills/releasekit/SKILL.md` + references (`actions`, `config`, `api`, `client-integration`)
+- [x] `docs/client-integration.md` (with a Flutter example)
+- [x] Drift tests (`tests/Unit/BoostDocsTest.php`): every named class exists, documented Action signatures match reflection, every exception/event/config key/scope is documented, guideline stays short and Blade-safe, client contract copies identical
+- [x] Boost-only trial: an agent given only the guideline + skill wrote a correct admin release controller (create, upload, publish, warnings → confirm → promote, yank with rollback, minimum) and nested the route stub in an `api/v1` group correctly. Its "doc gaps" list was fixed in the same PR (model columns, `currentOnTrack` semantics, rollback candidate query, stub naming/throttle, `AddLink` doesn't de-duplicate, PHP upload limits, yank vs. minimum, exception namespace, `warnings()` is an instance method).
 
 ---
 
@@ -116,6 +117,9 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-21 | 7 | Boost discovery verified in laravel/boost source: direct dependencies only; guidelines = any `*.blade.php`/`*.md` under `resources/boost/guidelines`; skills = `resources/boost/skills/<name>/SKILL.md` with required `name` + `description` frontmatter; the whole skill directory (incl. `references/`) is copied. `.blade.php` guidelines are Blade-rendered, so the guideline avoids `{{` and `@` directives (enforced by a test). |
+| 2026-10-21 | 7 | `docs/` stays export-ignored; the client contract ships inside the skill (`references/client-integration.md`), kept identical to `docs/client-integration.md` by a test. |
+| 2026-10-21 | 7 | Added `laravel/boost` to composer `suggest`; CHANGELOG has an "Unreleased" entry for the first release candidate. |
 | 2026-10-21 | 6 | Only HTTP clients are counted: the `check` and artifact download controllers record stats; facade calls (server-side) and the `downloads` listing never do. Rejected requests (422/403/404) are not recorded. |
 | 2026-10-21 | 6 | Checks are counted by the client version exactly as sent (`1.2` and `1.2.0` are separate rows); downloads by the release version. |
 | 2026-10-21 | 6 | Recording is synchronous (one upsert) and wrapped in try/catch: a stats failure logs a warning and never breaks a check or download. Table existence is checked once per process. |
