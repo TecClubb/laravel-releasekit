@@ -37,6 +37,9 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0"
     },
+    "suggest": {
+        "laravel/boost": "Lets AI agents in your project use ReleaseKit correctly through its bundled guideline and skill."
+    },
     "autoload": {
         "psr-4": {
             "TecClub\\ReleaseKit\\": "src/",
