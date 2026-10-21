@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use TecClub\ReleaseKit\Actions\PromoteRelease;
+use TecClub\ReleaseKit\Http\RouteRegistrar;
 use TecClub\ReleaseKit\Models\Release;
 use TecClub\ReleaseKit\Tests\TestCase;
 
@@ -15,6 +16,21 @@ uses(RefreshDatabase::class)->in('Feature');
 function registerDownloadRoute(string $name = 'releasekit.artifacts.download'): void
 {
     Route::get('releasekit/artifacts/{artifact}/download', fn () => 'download')->name($name);
+    Route::getRoutes()->refreshNameLookups();
+}
+
+/**
+ * Registers the package API the same way auto-registration does.
+ *
+ * @param  array<string, mixed>  $config  releasekit.* keys, e.g. ['routes.prefix' => 'api/v1']
+ */
+function withReleaseKitRoutes(array $config = []): void
+{
+    foreach ($config as $key => $value) {
+        config()->set("releasekit.{$key}", $value);
+    }
+
+    app(RouteRegistrar::class)->register();
     Route::getRoutes()->refreshNameLookups();
 }
 

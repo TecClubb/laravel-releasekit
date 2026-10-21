@@ -5,6 +5,7 @@ namespace TecClub\ReleaseKit;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use TecClub\ReleaseKit\Http\RouteRegistrar;
 use TecClub\ReleaseKit\Observers\CacheInvalidationObserver;
 use TecClub\ReleaseKit\Services\ReleaseCache;
 use TecClub\ReleaseKit\Support\ChannelRegistry;
@@ -50,11 +51,33 @@ class ReleaseKitServiceProvider extends PackageServiceProvider
             $model::observe(CacheInvalidationObserver::class);
         }
 
-        if ($this->app->runningInConsole()) {
-            // The stats table is optional: it is published on request and never loaded at runtime.
-            $this->publishes([
-                $this->package->basePath('/../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php') => $this->generateMigrationName('create_app_release_stats_table', Carbon::now()),
-            ], 'releasekit-analytics-migrations');
+        // Routes are opt-in: hosts usually register them their own way (e.g. inside an API versioning setup).
+        if (config('releasekit.routes.register', false) && ! $this->app->routesAreCached()) {
+            $this->app->make(RouteRegistrar::class)->register();
         }
+
+        if ($this->app->runningInConsole()) {
+            $this->registerPublishables();
+        }
+    }
+
+    private function registerPublishables(): void
+    {
+        // The stats table is optional: it is published on request and never loaded at runtime.
+        $this->publishes([
+            $this->package->basePath('/../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php') => $this->generateMigrationName('create_app_release_stats_table', Carbon::now()),
+        ], 'releasekit-analytics-migrations');
+
+        $this->publishes([
+            $this->package->basePath('/../routes/releasekit.php') => base_path('routes/releasekit.php'),
+        ], 'releasekit-routes');
+
+        $controllers = [];
+
+        foreach (glob($this->package->basePath('/../stubs/controllers/*.php.stub')) ?: [] as $stub) {
+            $controllers[$stub] = app_path('Http/Controllers/ReleaseKit/'.basename($stub, '.stub'));
+        }
+
+        $this->publishes($controllers, 'releasekit-controllers');
     }
 }
