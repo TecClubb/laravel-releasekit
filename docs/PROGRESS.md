@@ -9,8 +9,8 @@ Update this file in the same PR as the work it describes.
 |---|---|---|---|
 | 1 | Skeleton & foundation | `phase/1-skeleton` | ✅ Done ([#1](https://github.com/TecClubb/laravel-releasekit/pull/1)) |
 | 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | ✅ Done ([#2](https://github.com/TecClubb/laravel-releasekit/pull/2)) |
-| 3 | Services & facade | `phase/3-services` | 🟡 In review |
-| 4 | HTTP API & routes | `phase/4-http` | ⚪ Not started |
+| 3 | Services & facade | `phase/3-services` | ✅ Done ([#3](https://github.com/TecClubb/laravel-releasekit/pull/3)) |
+| 4 | HTTP API & routes | `phase/4-http` | 🟡 In review |
 | 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ⚪ Not started |
 | 6 | Analytics (optional stats) | `phase/6-analytics` | ⚪ Not started |
 | 7 | Docs & Laravel Boost | `phase/7-docs-boost` | ⚪ Not started |
@@ -65,11 +65,12 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** API tests pass in both auto-registered and published-route modes.
 
-- [ ] Controllers: `Check`, `Downloads`, `Releases`, `ArtifactDownload`
-- [ ] Form requests + API resources (§7.3–7.6 shapes), error codes (§7.7)
-- [ ] `routes/releasekit.php` stub, `releasekit-routes` + `releasekit-controllers` publish tags
-- [ ] Opt-in auto-registration honouring `routes.endpoints`
-- [ ] Signed download URLs for protected channels, `ArtifactDownloaded` event
+- [x] Controllers: `Check`, `Downloads`, `Releases`, `ArtifactDownload` (invokable, thin)
+- [x] Form requests (`CheckRequest`, `DownloadsRequest`, `ReleasesRequest`) + API resources (§7.3–7.6 shapes), error codes (§7.7): JSON 422 / 403 regardless of `Accept`, 404 for unavailable artifacts
+- [x] `routes/releasekit.php` stub, `releasekit-routes` + `releasekit-controllers` publish tags (controller stubs are generated copies; a test fails if they drift)
+- [x] Opt-in auto-registration (`Http\RouteRegistrar`) honouring `prefix`, `name`, `middleware`, `endpoints`; skipped when routes are cached
+- [x] Signed download URLs verified for protected channels (403 invalid/expired), `ArtifactDownloaded` event
+- [x] Tests in both modes: auto-registered and the published stub inside a host group, plus published controller copies (285 tests total)
 
 ## Phase 5 — Storage
 
@@ -114,6 +115,12 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-21 | 4 | Auto-registration is done by `Http\RouteRegistrar` (needed for the per-endpoint toggles); `routes/releasekit.php` is the publishable stub with plain `Route::` definitions under `config('releasekit.routes.name')`, so signed download URLs keep resolving. |
+| 2026-10-21 | 4 | Validation and channel-access errors are always JSON (422 / 403), even without `Accept: application/json` — app clients and download managers rarely send it. |
+| 2026-10-21 | 4 | `architecture` is validated against the platform's architectures in `check` and `downloads` (422 for e.g. `x64` on Android). |
+| 2026-10-21 | 4 | `releases` endpoint takes `per_page` (default 20, max 100) and returns the standard paginated `{data, links, meta}` shape; `check` and `downloads` are unwrapped as in §7.3/§7.4. An empty `platforms` is `{}`, not `[]`. |
+| 2026-10-21 | 4 | `{artifact}` is resolved manually through `ModelResolver` (not implicit binding) so host model subclasses work; non-numeric ids 404. |
+| 2026-10-21 | 4 | `ArtifactDownloaded` carries the artifact and the effective `DeliveryMode`; it is not fired for direct-from-storage URLs (public mode without the app). |
 | 2026-10-20 | 3 | Services and the facade do **not** enforce channel access; the HTTP layer does (via `ChannelAccessGuard`). A host calling the facade decides who sees protected channels. Protected artifact URLs are still always temporary signed route URLs. |
 | 2026-10-20 | 3 | Snapshot stores every active artifact of the current release; `downloadable_formats` and architecture filtering happen at read time, so config edits apply without waiting for the cache TTL. |
 | 2026-10-20 | 3 | Links order: the current release's links first, then permanent platform links, each by `sort_order`. Clients use the first store link. |

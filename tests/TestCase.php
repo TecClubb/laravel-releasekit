@@ -7,6 +7,21 @@ use TecClub\ReleaseKit\ReleaseKitServiceProvider;
 
 class TestCase extends Orchestra
 {
+    /**
+     * Config applied before the package boots, for tests that need to
+     * observe boot-time behaviour (call refreshApplication() after setting).
+     *
+     * @var array<string, mixed>
+     */
+    public static array $bootConfig = [];
+
+    protected function tearDown(): void
+    {
+        static::$bootConfig = [];
+
+        parent::tearDown();
+    }
+
     protected function getPackageProviders($app)
     {
         return [
@@ -24,5 +39,9 @@ class TestCase extends Orchestra
         }
 
         $app['config']->set('database.default', $connection);
+
+        foreach (static::$bootConfig as $key => $value) {
+            $app['config']->set($key, $value);
+        }
     }
 }
