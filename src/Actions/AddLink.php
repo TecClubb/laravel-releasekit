@@ -2,12 +2,12 @@
 
 namespace TecClub\ReleaseKit\Actions;
 
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Actions\Concerns\ValidatesLinks;
 use TecClub\ReleaseKit\Enums\LinkType;
 use TecClub\ReleaseKit\Exceptions\InvalidLink;
 use TecClub\ReleaseKit\Models\Link;
 use TecClub\ReleaseKit\Models\Release;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Support\ModelResolver;
 
 /**

@@ -4,12 +4,12 @@ namespace TecClub\ReleaseKit\Actions;
 
 use Illuminate\Database\UniqueConstraintViolationException;
 use TecClub\ReleaseKit\Actions\Concerns\RunsInTransaction;
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Enums\ReleaseStatus;
 use TecClub\ReleaseKit\Events\ReleaseCreated;
 use TecClub\ReleaseKit\Exceptions\DuplicateRelease;
 use TecClub\ReleaseKit\Models\Release;
 use TecClub\ReleaseKit\Support\ChannelRegistry;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Support\ModelResolver;
 use TecClub\ReleaseKit\Support\VersionComparator;
 

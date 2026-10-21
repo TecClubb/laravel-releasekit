@@ -2,10 +2,10 @@
 
 namespace TecClub\ReleaseKit\Actions;
 
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Actions\Concerns\ValidatesLinks;
 use TecClub\ReleaseKit\Enums\LinkType;
 use TecClub\ReleaseKit\Models\Link;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 
 /**
  * Updates a link. Its platform and release are fixed. Setting a store

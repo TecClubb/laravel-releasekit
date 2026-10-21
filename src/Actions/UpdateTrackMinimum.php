@@ -4,10 +4,10 @@ namespace TecClub\ReleaseKit\Actions;
 
 use TecClub\ReleaseKit\Actions\Concerns\LocksTracks;
 use TecClub\ReleaseKit\Actions\Concerns\RunsInTransaction;
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Events\TrackMinimumUpdated;
 use TecClub\ReleaseKit\Exceptions\InvalidVersion;
 use TecClub\ReleaseKit\Models\Track;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Support\VersionComparator;
 
 /**

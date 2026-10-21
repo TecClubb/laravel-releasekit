@@ -3,11 +3,11 @@
 namespace TecClub\ReleaseKit\Actions;
 
 use TecClub\ReleaseKit\Actions\Concerns\RunsInTransaction;
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Enums\ReleaseStatus;
 use TecClub\ReleaseKit\Exceptions\ReleaseKitException;
 use TecClub\ReleaseKit\Exceptions\ReleaseLocked;
 use TecClub\ReleaseKit\Models\Release;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Support\VersionComparator;
 
 /**

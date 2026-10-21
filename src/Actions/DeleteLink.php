@@ -2,8 +2,8 @@
 
 namespace TecClub\ReleaseKit\Actions;
 
-use TecClub\ReleaseKit\Actions\Concerns\ValidatesInput;
 use TecClub\ReleaseKit\Models\Link;
+use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
 
 class DeleteLink
 {

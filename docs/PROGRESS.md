@@ -8,8 +8,8 @@ Update this file in the same PR as the work it describes.
 | # | Phase | Branch | Status |
 |---|---|---|---|
 | 1 | Skeleton & foundation | `phase/1-skeleton` | ✅ Done ([#1](https://github.com/TecClubb/laravel-releasekit/pull/1)) |
-| 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | 🟡 In review |
-| 3 | Services & facade | `phase/3-services` | ⚪ Not started |
+| 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | ✅ Done ([#2](https://github.com/TecClubb/laravel-releasekit/pull/2)) |
+| 3 | Services & facade | `phase/3-services` | 🟡 In review |
 | 4 | HTTP API & routes | `phase/4-http` | ⚪ Not started |
 | 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ⚪ Not started |
 | 6 | Analytics (optional stats) | `phase/6-analytics` | ⚪ Not started |
@@ -53,12 +53,13 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** service tests pass without HTTP.
 
-- [ ] Build the cached per platform+channel payload on `ReleaseCache` (§10; the cache class and invalidation shipped in phase 2)
-- [ ] `VersionChecker` (§7.3 algorithm)
-- [ ] `DownloadResolver` (architecture selection, downloadable formats, link merging, §7.4)
-- [ ] `DownloadUrlGenerator`, `ArtifactDelivery` (stream / signed / public + fallbacks, §9)
-- [ ] `ChannelAccessGuard` (§8)
-- [ ] `ReleaseKit` + facade: `check()`, `downloads()`, `releases()` (§7.2)
+- [x] `Services\TrackSnapshots` + `Data\TrackSnapshot`: the cached per platform+channel payload (current, minimum, yanked versions, artifacts, links) on `ReleaseCache` (§10). Cached as plain arrays; a warm check runs zero queries.
+- [x] `VersionChecker` (§7.3 algorithm) → `Data\CheckResult` + `Enums\CheckStatus`
+- [x] `DownloadResolver` (architecture selection, downloadable formats at read time, release + platform link merging, empty platforms omitted, §7.4) → `Data\DownloadsResult` / `PlatformDownloads`
+- [x] `DownloadUrlGenerator` (signed route for protected, direct storage URL for public + `public_through_app=false`, else app route) and `ArtifactDelivery` (stream / signed / public + fallbacks, warn once, §9)
+- [x] `ChannelAccessGuard` (§8): gate ability, configured guard, fail closed
+- [x] `ReleaseKit` + facade: `check()`, `downloads()`, `downloadsFor()`, `releases()` (§7.2)
+- [x] Tests: every §17 `VersionChecker` case, resolver, delivery modes + fallbacks, access, signed URLs not cached (248 tests total)
 
 ## Phase 4 — HTTP API & routes
 
@@ -113,6 +114,14 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-20 | 3 | Services and the facade do **not** enforce channel access; the HTTP layer does (via `ChannelAccessGuard`). A host calling the facade decides who sees protected channels. Protected artifact URLs are still always temporary signed route URLs. |
+| 2026-10-20 | 3 | Snapshot stores every active artifact of the current release; `downloadable_formats` and architecture filtering happen at read time, so config edits apply without waiting for the cache TTL. |
+| 2026-10-20 | 3 | Links order: the current release's links first, then permanent platform links, each by `sort_order`. Clients use the first store link. |
+| 2026-10-20 | 3 | A track pointing at a non-published release (only possible via direct writes) is served as "no current release". |
+| 2026-10-20 | 3 | Services validate platform/channel/version (`UnsupportedValue` / `InvalidVersion`) but not architecture — an unknown architecture just matches universal builds. Phase 4 requests can validate it strictly. |
+| 2026-10-20 | 3 | A local disk counts as having public URLs only when its config has a `url`; otherwise public delivery falls back to signed. |
+| 2026-10-20 | 3 | Missing download route throws `MissingDownloadRoute` explaining how to register it. |
+| 2026-10-20 | 3 | `ValidatesInput` moved to `Support\Concerns` (shared by Actions and services). Added `ReleaseKit::downloadsFor()` returning one platform's `PlatformDownloads`. |
 | 2026-10-20 | 2 | Status-changing Actions `refresh()` the release first, so a stale model can't e.g. publish a yanked release. |
 | 2026-10-20 | 2 | Duplicate check compares versions (not strings): `1.2` and `1.2.0` can't both exist on one platform + channel. |
 | 2026-10-20 | 2 | `UpdateRelease` takes an attribute array and ignores unchanged locked fields, so host forms can submit everything. Drafts: all fields; published: `release_notes`, `metadata`; yanked: `release_notes`. Platform can't change while a draft has artifacts/links; channel can't change while it has artifacts (files live on the channel's disk). |

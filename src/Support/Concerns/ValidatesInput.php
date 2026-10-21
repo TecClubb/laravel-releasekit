@@ -1,6 +1,6 @@
 <?php
 
-namespace TecClub\ReleaseKit\Actions\Concerns;
+namespace TecClub\ReleaseKit\Support\Concerns;
 
 use InvalidArgumentException;
 use TecClub\ReleaseKit\Exceptions\DuplicateRelease;
