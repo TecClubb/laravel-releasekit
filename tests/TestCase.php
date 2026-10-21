@@ -15,11 +15,26 @@ class TestCase extends Orchestra
      */
     public static array $bootConfig = [];
 
+    /**
+     * The analytics table is publish-only in real apps. Tests always migrate
+     * it up front: creating tables mid-test implicitly commits on MySQL and
+     * would break RefreshDatabase isolation.
+     */
+    public static bool $withAnalyticsTable = true;
+
     protected function tearDown(): void
     {
         static::$bootConfig = [];
+        static::$withAnalyticsTable = true;
 
         parent::tearDown();
+    }
+
+    protected function getEnvironmentSetUp($app)
+    {
+        if (static::$withAnalyticsTable) {
+            $app->afterResolving('migrator', fn ($migrator) => $migrator->path(__DIR__.'/../database/migrations/analytics'));
+        }
     }
 
     protected function getPackageProviders($app)

@@ -8,7 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('releasekit.tables.stats', 'app_release_stats'), function (Blueprint $table) {
+        $name = config('releasekit.tables.stats', 'app_release_stats');
+
+        Schema::create($name, function (Blueprint $table) use ($name) {
             $table->id();
             $table->date('date');
             $table->string('event', 20);
@@ -18,12 +20,14 @@ return new class extends Migration
             $table->string('version', 50)->default('');
             $table->string('architecture', 50)->default('');
             $table->unsignedBigInteger('artifact_id')->default(0); // no FK, so stats survive deletion
-            $table->char('country', 2)->default('');
+            // varchar, not char: PostgreSQL pads char(2) so '' would read back as '  '.
+            $table->string('country', 2)->default('');
             $table->unsignedBigInteger('count')->default(0);
 
             $table->unique(
                 ['date', 'event', 'platform', 'channel', 'version', 'architecture', 'artifact_id', 'country'],
-                'releasekit_stats_dimensions_unique'
+                // Index names are schema-wide on SQLite/PostgreSQL, so derive it from the table (max 64 chars for MySQL).
+                substr("{$name}_dimensions_unique", 0, 64)
             );
         });
     }

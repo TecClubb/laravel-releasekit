@@ -9,6 +9,7 @@ use TecClub\ReleaseKit\Console\PruneOrphansCommand;
 use TecClub\ReleaseKit\Http\RouteRegistrar;
 use TecClub\ReleaseKit\Observers\CacheInvalidationObserver;
 use TecClub\ReleaseKit\Services\ReleaseCache;
+use TecClub\ReleaseKit\Services\StatsRecorder;
 use TecClub\ReleaseKit\Support\ChannelRegistry;
 use TecClub\ReleaseKit\Support\DiskResolver;
 use TecClub\ReleaseKit\Support\ModelResolver;
@@ -37,6 +38,7 @@ class ReleaseKitServiceProvider extends PackageServiceProvider
         $this->app->singleton(ChannelRegistry::class);
         $this->app->singleton(DiskResolver::class);
         $this->app->singleton(ReleaseCache::class);
+        $this->app->singleton(StatsRecorder::class);
         $this->app->singleton(ReleaseKit::class);
     }
 
