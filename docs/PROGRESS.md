@@ -11,8 +11,8 @@ Update this file in the same PR as the work it describes.
 | 2 | Domain (Actions, exceptions, events, observers) | `phase/2-domain` | ✅ Done ([#2](https://github.com/TecClubb/laravel-releasekit/pull/2)) |
 | 3 | Services & facade | `phase/3-services` | ✅ Done ([#3](https://github.com/TecClubb/laravel-releasekit/pull/3)) |
 | 4 | HTTP API & routes | `phase/4-http` | ✅ Done ([#4](https://github.com/TecClubb/laravel-releasekit/pull/4)) |
-| 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | 🟡 In review |
-| 6 | Analytics (optional stats) | `phase/6-analytics` | ⚪ Not started |
+| 5 | Storage (uploads, jobs, prune command) | `phase/5-storage` | ✅ Done ([#5](https://github.com/TecClubb/laravel-releasekit/pull/5)) |
+| 6 | Analytics (optional stats) | `phase/6-analytics` | 🟡 In review |
 | 7 | Docs & Laravel Boost | `phase/7-docs-boost` | ⚪ Not started |
 
 Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
@@ -86,9 +86,10 @@ Legend: ⚪ not started · 🟡 in progress / in review · ✅ done (merged)
 
 **Done when:** disabled by default; counts are correct when enabled.
 
-- [ ] `StatsRecorder` (atomic upserts, no-op when disabled or table missing)
-- [ ] `Stat` scopes: `between`, `event`, `forPlatform`, `groupByVersion`
-- [ ] Hooks in check + download paths, country header
+- [x] `StatsRecorder` (atomic `count = count + 1` upserts on SQLite / MySQL / MariaDB / PostgreSQL, no-op when disabled or table missing, failures logged and swallowed)
+- [x] `Stat` scopes: `between`, `event`, `forPlatform`, `forChannel`, `forArtifact`, `groupByVersion`, `groupByDate`, `groupByCountry`, `groupByPlatform`; `Enums\StatEvent`
+- [x] Hooks in the check and download controllers, country header (`CF-IPCountry` by default)
+- [x] Tests: disabled by default, counts correct, per-event switches, every endpoint works without the table (324 tests total)
 
 ## Phase 7 — Docs & Laravel Boost
 
@@ -115,6 +116,12 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-20 | 1 | `Artifact` hides `disk`/`path` from serialisation by default; resources opt in for public delivery only. |
 | 2026-10-20 | 1 | Release's "live on" relation is `currentOnTrack()` (HasOne via `current_release_id`). |
 | 2026-10-20 | 1 | PHPStan raised from skeleton level 5 to level 6. |
+| 2026-10-21 | 6 | Only HTTP clients are counted: the `check` and artifact download controllers record stats; facade calls (server-side) and the `downloads` listing never do. Rejected requests (422/403/404) are not recorded. |
+| 2026-10-21 | 6 | Checks are counted by the client version exactly as sent (`1.2` and `1.2.0` are separate rows); downloads by the release version. |
+| 2026-10-21 | 6 | Recording is synchronous (one upsert) and wrapped in try/catch: a stats failure logs a warning and never breaks a check or download. Table existence is checked once per process. |
+| 2026-10-21 | 6 | Country must match `^[A-Z][A-Z0-9]$` after upper-casing (keeps Cloudflare's `T1`/`XX`); anything else is stored as `''`. |
+| 2026-10-21 | 6 | The stats unique index name is now derived from the table name (was fixed), so custom table names don't collide on SQLite/PostgreSQL. |
+| 2026-10-21 | 6 | Test harness always migrates the stats table up front (`TestCase::$withAnalyticsTable`), since creating tables mid-test implicitly commits on MySQL. The one test that writes rows after dropping the table is skipped on MySQL. |
 | 2026-10-21 | 5 | The checksum job takes the artifact id (not the model), so a deleted artifact is a silent no-op; a missing file logs a warning instead of failing the job. It saves normally so the cache observer refreshes the served checksum. |
 | 2026-10-21 | 5 | `prune-orphans` skips files modified in the last 60 minutes (`--older-than`), because `AttachArtifact` moves the file into place before its row commits. Without `--dry-run` it asks for confirmation unless `--force`. It scans the default disk, every channel disk and every disk referenced by artifact rows, only under `storage.directory`. |
 | 2026-10-21 | 5 | The 1 GB+ tests are in the `large-files` group: excluded from `composer test` and the CI matrix, run by `composer test-large` and a dedicated CI job. |

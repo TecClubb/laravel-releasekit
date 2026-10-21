@@ -9,6 +9,7 @@ use TecClub\ReleaseKit\Models\Release;
 use TecClub\ReleaseKit\Models\Track;
 use TecClub\ReleaseKit\ReleaseKit;
 use TecClub\ReleaseKit\ReleaseKitServiceProvider;
+use TecClub\ReleaseKit\Tests\TestCase;
 
 it('creates the four core tables', function () {
     expect(Schema::hasColumns('app_releases', [
@@ -27,8 +28,11 @@ it('creates the four core tables', function () {
         ]))->toBeTrue();
 });
 
-it('does not create the analytics table at runtime', function () {
-    expect(Schema::hasTable('app_release_stats'))->toBeFalse();
+it('never loads the analytics migration at runtime', function () {
+    TestCase::$withAnalyticsTable = false;
+    $this->refreshApplication();
+
+    expect(collect(app('migrator')->paths())->filter(fn (string $path) => str_contains($path, 'analytics')))->toBeEmpty();
 });
 
 it('publishes the analytics migration under its own tag', function () {
@@ -44,17 +48,17 @@ it('publishes the core migrations and config', function () {
         ->and(ServiceProvider::pathsToPublish(ReleaseKitServiceProvider::class, 'releasekit-config'))->toHaveCount(1);
 });
 
-it('creates the analytics table from the published migration', function () {
+it('creates and drops the analytics table from the published migration', function () {
+    // The test harness has already migrated it (see TestCase::$withAnalyticsTable).
     $migration = include __DIR__.'/../../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php';
-    $migration->up();
 
+    $migration->down();
+    expect(Schema::hasTable('app_release_stats'))->toBeFalse();
+
+    $migration->up();
     expect(Schema::hasColumns('app_release_stats', [
         'date', 'event', 'platform', 'channel', 'version', 'architecture', 'artifact_id', 'country', 'count',
     ]))->toBeTrue();
-
-    $migration->down();
-
-    expect(Schema::hasTable('app_release_stats'))->toBeFalse();
 });
 
 it('enforces one release per platform, channel and version', function () {
@@ -117,9 +121,8 @@ it('honours custom table names from config', function () {
 });
 
 it('lets hosts opt out of the package migrations', function () {
-    $packagePath = realpath(__DIR__.'/../../database/migrations');
     $loadsPackageMigrations = fn () => collect(app('migrator')->paths())
-        ->contains(fn (string $path) => str_starts_with(realpath($path) ?: $path, $packagePath));
+        ->contains(fn (string $path) => str_ends_with($path, 'create_app_releases_table.php'));
 
     expect($loadsPackageMigrations())->toBeTrue();
 

@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 use TecClub\ReleaseKit\Events\ArtifactDownloaded;
 use TecClub\ReleaseKit\Services\ArtifactDelivery;
 use TecClub\ReleaseKit\Services\DownloadResolver;
+use TecClub\ReleaseKit\Services\StatsRecorder;
 use TecClub\ReleaseKit\Support\ChannelRegistry;
 use TecClub\ReleaseKit\Support\ModelResolver;
 
@@ -16,6 +17,9 @@ use TecClub\ReleaseKit\Support\ModelResolver;
  * 404 unless the artifact is active, downloadable and its release is
  * published. Protected channels require a valid signed URL (403 otherwise);
  * the caller was authorised when the downloads list was requested.
+ *
+ * Records a "download" stat when analytics is enabled. It counts an
+ * initiated download, not a confirmed one.
  */
 class ArtifactDownloadController
 {
@@ -25,6 +29,7 @@ class ArtifactDownloadController
         DownloadResolver $resolver,
         ArtifactDelivery $delivery,
         ChannelRegistry $channels,
+        StatsRecorder $stats,
     ): Response {
         $model = ModelResolver::artifact()::query()->with('release')->find($artifact);
 
@@ -40,6 +45,7 @@ class ArtifactDownloadController
 
         $mode = $delivery->modeFor($model->disk, $channel);
 
+        $stats->recordDownload($model, $stats->countryFrom($request));
         ArtifactDownloaded::dispatch($model, $mode);
 
         return $delivery->deliver($model);

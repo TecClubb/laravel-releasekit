@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ReleaseKit;
 use TecClub\ReleaseKit\Http\Controllers\Concerns\AuthorizesChannels;
 use TecClub\ReleaseKit\Http\Requests\CheckRequest;
 use TecClub\ReleaseKit\Http\Resources\CheckResultResource;
+use TecClub\ReleaseKit\Services\StatsRecorder;
 use TecClub\ReleaseKit\Services\VersionChecker;
 
 /**
@@ -14,7 +15,7 @@ class CheckController
 {
     use AuthorizesChannels;
 
-    public function __invoke(CheckRequest $request, VersionChecker $checker): CheckResultResource
+    public function __invoke(CheckRequest $request, VersionChecker $checker, StatsRecorder $stats): CheckResultResource
     {
         $channel = $this->authorizeChannel($request, $request->channel());
 
@@ -23,6 +24,14 @@ class CheckController
             version: $request->version(),
             channel: $channel,
             architecture: $request->architecture(),
+        );
+
+        $stats->recordCheck(
+            platform: (string) $request->platform(),
+            channel: $channel,
+            clientVersion: $request->version(),
+            architecture: $request->architecture(),
+            country: $stats->countryFrom($request),
         );
 
         return new CheckResultResource($result);
