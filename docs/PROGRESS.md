@@ -120,6 +120,7 @@ Choices made during the build that refine or deviate from the plan.
 | 2026-10-21 | 6 | Checks are counted by the client version exactly as sent (`1.2` and `1.2.0` are separate rows); downloads by the release version. |
 | 2026-10-21 | 6 | Recording is synchronous (one upsert) and wrapped in try/catch: a stats failure logs a warning and never breaks a check or download. Table existence is checked once per process. |
 | 2026-10-21 | 6 | Country must match `^[A-Z][A-Z0-9]$` after upper-casing (keeps Cloudflare's `T1`/`XX`); anything else is stored as `''`. |
+| 2026-10-21 | 6 | `country` on the stats table is `varchar(2)`, not `char(2)` as in §5.5: PostgreSQL pads `char` so `''` read back as `'  '` (caught by CI). |
 | 2026-10-21 | 6 | The stats unique index name is now derived from the table name (was fixed), so custom table names don't collide on SQLite/PostgreSQL. |
 | 2026-10-21 | 6 | Test harness always migrates the stats table up front (`TestCase::$withAnalyticsTable`), since creating tables mid-test implicitly commits on MySQL. The one test that writes rows after dropping the table is skipped on MySQL. |
 | 2026-10-21 | 5 | The checksum job takes the artifact id (not the model), so a deleted artifact is a silent no-op; a missing file logs a warning instead of failing the job. It saves normally so the cache observer refreshes the served checksum. |

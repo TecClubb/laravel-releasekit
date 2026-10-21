@@ -82,6 +82,4 @@ it('keeps every endpoint working with analytics enabled but no table', function 
     $this->getJson('/api/releasekit/downloads')->assertOk();
     $this->getJson('/api/releasekit/releases')->assertOk();
     $this->get(route('releasekit.artifacts.download', $artifact->id))->assertOk();
-})->after(function () {
-    (include __DIR__.'/../../../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php')->up();
-});
+})->after(fn () => restoreStatsTable());

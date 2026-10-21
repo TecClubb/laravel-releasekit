@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use TecClub\ReleaseKit\Actions\PromoteRelease;
 use TecClub\ReleaseKit\Http\RouteRegistrar;
 use TecClub\ReleaseKit\Models\Release;
@@ -32,6 +33,16 @@ function withReleaseKitRoutes(array $config = []): void
 
     app(RouteRegistrar::class)->register();
     Route::getRoutes()->refreshNameLookups();
+}
+
+/**
+ * Re-creates the stats table after a test dropped it (no-op if it exists).
+ */
+function restoreStatsTable(): void
+{
+    if (! Schema::hasTable(config('releasekit.tables.stats', 'app_release_stats'))) {
+        (include __DIR__.'/../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php')->up();
+    }
 }
 
 /**

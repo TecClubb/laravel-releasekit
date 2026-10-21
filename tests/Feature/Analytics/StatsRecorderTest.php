@@ -91,9 +91,7 @@ it('does nothing when the stats table is missing', function () {
     recorder()->recordCheck('android', 'stable', '1.0');
 
     expect(recorder()->enabled())->toBeFalse();
-})->after(function () {
-    (include __DIR__.'/../../../database/migrations/analytics/2026_10_20_000005_create_app_release_stats_table.php')->up();
-});
+})->after(fn () => restoreStatsTable());
 
 it('never throws when a write fails', function () {
     Log::spy();

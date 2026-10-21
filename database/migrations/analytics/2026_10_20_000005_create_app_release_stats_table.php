@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('version', 50)->default('');
             $table->string('architecture', 50)->default('');
             $table->unsignedBigInteger('artifact_id')->default(0); // no FK, so stats survive deletion
-            $table->char('country', 2)->default('');
+            // varchar, not char: PostgreSQL pads char(2) so '' would read back as '  '.
+            $table->string('country', 2)->default('');
             $table->unsignedBigInteger('count')->default(0);
 
             $table->unique(
