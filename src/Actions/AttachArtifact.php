@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use TecClub\ReleaseKit\Actions\Concerns\RunsInTransaction;
 use TecClub\ReleaseKit\Events\ArtifactAttached;
 use TecClub\ReleaseKit\Exceptions\InvalidArtifactFile;
+use TecClub\ReleaseKit\Jobs\ComputeArtifactChecksum;
 use TecClub\ReleaseKit\Models\Artifact;
 use TecClub\ReleaseKit\Models\Release;
 use TecClub\ReleaseKit\Support\Concerns\ValidatesInput;
@@ -24,6 +25,9 @@ use Throwable;
  * which is a server-side copy on S3 and R2.
  *
  * Final path: {directory}/{channel}/{platform}/{version}/{ulid}-{filename}
+ *
+ * After commit, ComputeArtifactChecksum fills in checksum_sha256 (and any
+ * missing size or MIME type) on the queue.
  */
 class AttachArtifact
 {
@@ -75,6 +79,7 @@ class AttachArtifact
                 ]);
 
                 ArtifactAttached::dispatch($artifact);
+                ComputeArtifactChecksum::dispatch((int) $artifact->getKey())->afterCommit();
 
                 return $artifact;
             });

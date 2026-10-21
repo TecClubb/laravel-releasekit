@@ -64,7 +64,29 @@ jobs:
         run: composer show -D
 
       - name: Execute tests
-        run: vendor/bin/pest --ci
+        run: vendor/bin/pest --ci --exclude-group=large-files
+
+  large-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    name: 1 GB+ artifact handling
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, fileinfo
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction
+
+      - name: Execute large file tests
+        run: vendor/bin/pest --ci --group=large-files
 
   databases:
     runs-on: ubuntu-latest
@@ -123,7 +145,7 @@ jobs:
           composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Execute tests
-        run: vendor/bin/pest --ci
+        run: vendor/bin/pest --ci --exclude-group=large-files
         env:
           DB_CONNECTION: ${{ matrix.database }}
           DB_HOST: 127.0.0.1
